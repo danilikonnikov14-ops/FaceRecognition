@@ -1,0 +1,720 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Распознавание лиц</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@200..900&display=swap" rel="stylesheet">
+    <link rel="icon" href="static/logo.png" type="image/png">
+    <link rel="apple-touch-icon" href="static/logo.png">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: "Unbounded", sans-serif;
+            font-optical-sizing: auto;
+            font-weight: 500;
+            font-style: normal;
+        }
+
+        body {
+            background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+            min-height: 100vh;
+            padding: 40px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .container {
+            max-width: 1400px;
+            width: 100%;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 50px;
+            padding: 50px;
+            box-shadow: 0 30px 60px -20px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(231, 0, 76, 0.2) inset;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 6px;
+            background: linear-gradient(90deg, #e7004c, #ff6b6b, #e7004c);
+            background-size: 200% 100%;
+            animation: gradientMove 3s ease infinite;
+        }
+
+        @keyframes gradientMove {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 40px;
+            position: relative;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .logo-wrapper {
+            position: relative;
+            width: 80px;
+            height: 80px;
+            border-radius: 25px;
+            overflow: hidden;
+            box-shadow: 0 15px 30px -8px rgba(231, 0, 76, 0.4);
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .logo-wrapper:hover {
+            transform: scale(1.05) rotate(5deg);
+            box-shadow: 0 20px 40px -5px #e7004c;
+        }
+
+        .logo {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+
+        h1 {
+            color: #222222;
+            font-size: 2.8em;
+            font-weight: 800;
+            letter-spacing: -1px;
+            line-height: 1.2;
+        }
+
+        .title-accent {
+            color: #e7004c;
+            position: relative;
+            display: inline-block;
+        }
+
+        .title-accent::after {
+            content: '';
+            position: absolute;
+            bottom: -5px;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: #e7004c;
+            border-radius: 4px;
+            transform: scaleX(0);
+            transform-origin: left;
+            animation: lineAppear 0.6s ease forwards;
+        }
+
+        @keyframes lineAppear {
+            to { transform: scaleX(1); }
+        }
+
+        .header-stats {
+            background: linear-gradient(135deg, #f8f8f8, #ffffff);
+            padding: 15px 30px;
+            border-radius: 50px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+            border: 1px solid #e0e0e0;
+        }
+
+        .stat-badge {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: #222222;
+        }
+
+        .stat-badge i {
+            color: #e7004c;
+            font-weight: 800;
+            font-size: 1.2em;
+        }
+
+        .upload-section {
+            text-align: center;
+            margin-bottom: 40px;
+            padding: 60px 40px;
+            border: 3px dashed #e7004c;
+            border-radius: 40px;
+            background: linear-gradient(135deg, #ffffff 0%, #f8f8f8 100%);
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .upload-section::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(231, 0, 76, 0.05) 0%, transparent 70%);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .upload-section:hover::before {
+            opacity: 1;
+        }
+
+        .upload-section:hover {
+            background: #ffffff;
+            border-color: #222222;
+            transform: translateY(-5px);
+            box-shadow: 0 25px 40px -15px rgba(231, 0, 76, 0.3);
+        }
+
+        .upload-label {
+            display: inline-block;
+            padding: 16px 45px;
+            background: #e7004c;
+            color: white;
+            border-radius: 60px;
+            cursor: pointer;
+            font-size: 1.2em;
+            font-weight: 600;
+            transition: all 0.3s;
+            border: none;
+            box-shadow: 0 10px 25px -5px #e7004c;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .upload-label:hover {
+            background: linear-gradient(135deg, #ff1a1a, #e7004c);
+            transform: translateY(-3px);
+            box-shadow: 0 20px 35px -8px #e7004c;
+        }
+
+        #file-input {
+            display: none;
+        }
+
+        #file-name {
+            margin-top: 20px;
+            color: #222222;
+            font-size: 1em;
+            font-weight: 500;
+            padding: 10px 20px;
+            background: rgba(231, 0, 76, 0.1);
+            border-radius: 40px;
+            display: none; 
+            transition: all 0.3s ease;
+        }
+
+        #file-name:not(:empty) {
+            display: inline-block;
+        }
+
+        .image-container {
+            position: relative;
+            display: inline-block;
+            max-width: 100%;
+            margin: 30px auto;
+            border-radius: 30px;
+            overflow: hidden;
+            box-shadow: 0 30px 50px -20px rgba(34, 34, 34, 0.5);
+            background: #f8f8f8;
+            border: 3px solid #e7004c;
+            transition: all 0.3s ease;
+        }
+
+        #uploaded-image {
+            max-width: 100%;
+            height: auto;
+            display: block;
+            transition: all 0.3s ease;
+        }
+
+        .face-box {
+            position: absolute;
+            border: 4px solid #e7004c;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 0 0 rgba(231, 0, 76, 0.4);
+            pointer-events: auto;
+            z-index: 10;
+            animation: boxAppear 0.4s ease-out;
+        }
+
+        .face-box::before {
+            content: '';
+            position: absolute;
+            top: -2px;
+            left: -2px;
+            right: -2px;
+            bottom: -2px;
+            border: 2px solid rgba(255, 255, 255, 0.5);
+            border-radius: 14px;
+            pointer-events: none;
+        }
+
+        .face-box:hover {
+            border-color: #222222;
+            background: rgba(231, 0, 76, 0.15);
+            transform: scale(1.02);
+            box-shadow: 0 0 30px rgba(231, 0, 76, 0.8);
+        }
+
+        .face-label {
+            position: absolute;
+            top: -40px;
+            left: -4px;
+            background: linear-gradient(135deg, #e7004c, #ff1a1a);
+            color: white;
+            padding: 8px 20px;
+            border-radius: 30px;
+            font-size: 14px;
+            font-weight: 600;
+            white-space: nowrap;
+            opacity: 0;
+            transition: opacity 0.2s ease;
+            pointer-events: none;
+            box-shadow: 0 10px 20px -8px rgba(231, 0, 76, 0.5);
+            z-index: 20;
+            border: 2px solid white;
+        }
+
+        .face-box:hover .face-label {
+            opacity: 1;
+        }
+
+        .face-tooltip {
+            position: fixed;
+            background: linear-gradient(135deg, #e7004c, #ff1a1a); 
+            color: white;
+            padding: 8px 20px; 
+            border-radius: 30px; 
+            font-size: 14px; 
+            font-weight: 600; 
+            pointer-events: none;
+            z-index: 1000;
+            white-space: nowrap;
+            box-shadow: 0 10px 20px -8px rgba(231, 0, 76, 0.5); 
+            border: 2px solid white;
+            font-family: "Unbounded", sans-serif;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            margin: 40px 0;
+        }
+
+        .loading-spinner {
+            border: 5px solid #f0f0f0;
+            border-top: 5px solid #e7004c;
+            border-radius: 50%;
+            width: 70px;
+            height: 70px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        .loading p {
+            color: #222222;
+            font-weight: 600;
+            font-size: 1.2em;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        @keyframes boxAppear {
+            from {
+                opacity: 0;
+                transform: scale(0.8);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        .error {
+            color: #e7004c;
+            text-align: center;
+            margin: 30px 0;
+            padding: 20px;
+            background: #ffe6ec;
+            border-radius: 20px;
+            font-weight: 600;
+            border-left: 6px solid #e7004c;
+            font-size: 1.1em;
+            box-shadow: 0 10px 20px -10px #e7004c;
+        }
+
+        .stats {
+            margin: 40px 0 30px;
+            padding: 30px;
+            background: linear-gradient(135deg, #f8f8f8 0%, #ffffff 100%);
+            border-radius: 30px;
+            text-align: center;
+            border: 2px solid #e7004c;
+            box-shadow: 0 20px 40px -15px rgba(231, 0, 76, 0.2);
+        }
+
+        .stats h3 {
+            color: #222222;
+            margin-bottom: 15px;
+            font-size: 1.5em;
+            font-weight: 700;
+        }
+
+        .stats span {
+            font-weight: 800;
+            color: #e7004c;
+            font-size: 2.5em;
+            display: block;
+            margin: 10px 0;
+        }
+
+        .stats p {
+            color: #222222;
+            font-size: 1.1em;
+            font-weight: 500;
+        }
+
+        .features {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 25px;
+            margin: 50px 0 30px;
+        }
+
+        .feature-card {
+            background: white;
+            padding: 25px;
+            border-radius: 30px;
+            text-align: center;
+            box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.1);
+            border: 2px solid #f0f0f0;
+            transition: all 0.3s ease;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-10px);
+            border-color: #e7004c;
+            box-shadow: 0 20px 40px -15px #e7004c;
+        }
+
+        .feature-icon {
+            width: 60px;
+            height: 60px;
+            background: #e7004c;
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 20px;
+            font-size: 30px;
+            color: white;
+        }
+
+        .feature-card h4 {
+            color: #222222;
+            margin-bottom: 10px;
+            font-size: 1.2em;
+            font-weight: 700;
+        }
+
+        .feature-card p {
+            color: #666;
+            font-weight: 400;
+            line-height: 1.6;
+        }
+
+        .footer {
+            text-align: center;
+            margin-top: 50px;
+            padding-top: 30px;
+            border-top: 2px dashed #e0e0e0;
+            color: #222222;
+            font-size: 1em;
+            font-weight: 500;
+        }
+
+        .footer strong {
+            color: #e7004c;
+            font-weight: 700;
+        }
+
+        #result {
+            text-align: center;
+        }
+
+        .image-wrapper {
+            position: relative;
+            display: inline-block;
+            max-width: 100%;
+        }
+
+        /* Адаптивность */
+        @media (max-width: 768px) {
+            body {
+                padding: 20px 10px;
+            }
+
+            .container {
+                padding: 30px 20px;
+            }
+
+            h1 {
+                font-size: 2em;
+            }
+
+            .header {
+                flex-direction: column;
+                text-align: center;
+            }
+
+            .header-left {
+                justify-content: center;
+            }
+
+            .features {
+                grid-template-columns: 1fr;
+            }
+
+            .upload-section {
+                padding: 40px 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="header-left">
+                <div class="logo-wrapper">
+                    <img src="static/logo.png" 
+                         alt="FaceRecognition Logo" 
+                         class="logo">
+                </div>
+                <h1>
+                    <span>Распознание лиц</span>
+                </h1>
+            </div>
+        </div>
+        
+        <div class="upload-section">
+            <label for="file-input" class="upload-label" id="upload-label">
+                Выберите изображение
+            </label>
+            <input type="file" id="file-input" accept="image/*" capture>
+            <div id="file-name"></div>
+            <p style="margin-top: 20px; color: #666; font-weight: 400;">или перетащите файл сюда</p>
+        </div>
+        
+        <div class="loading" id="loading">
+            <div class="loading-spinner"></div>
+            <p>Анализ изображения...</p>
+        </div>
+        
+        <div class="error" id="error" style="display: none;"></div>
+        
+        <div id="result"></div>
+        
+        <div class="stats" id="stats" style="display: none;">
+            <h3>Результаты анализа</h3>
+            <p>Обнаружено лиц: <span id="face-count">0</span></p>
+            <p style="font-weight: 400;">Наведите курсор на рамку для детальной информации</p>
+        </div>
+        
+        <div class="footer">
+            Разработано <strong>Иконниковым Данилом</strong>
+        </div>
+    </div>
+    
+    <script>
+        const fileInput = document.getElementById('file-input');
+        const resultDiv = document.getElementById('result');
+        const loadingDiv = document.getElementById('loading');
+        const errorDiv = document.getElementById('error');
+        const fileNameDiv = document.getElementById('file-name');
+        const statsDiv = document.getElementById('stats');
+        const faceCountSpan = document.getElementById('face-count');
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const uploadLabel = document.getElementById('upload-label');
+            const fileInput = document.getElementById('file-input');
+            
+            uploadLabel.addEventListener('click', function(e) {
+                e.preventDefault();
+                fileInput.click();
+            });
+            
+            const uploadSection = document.querySelector('.upload-section');
+            uploadSection.addEventListener('click', function(e) {
+                if (!e.target.closest('.upload-label')) {
+                    fileInput.click();
+                }
+            });
+        });
+                
+        fileInput.addEventListener('change', async (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            
+            fileNameDiv.textContent = `📸 ${file.name}`;
+            
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                resultDiv.innerHTML = `
+                    <div class="image-container">
+                        <img id="uploaded-image" src="${e.target.result}" alt="Uploaded">
+                    </div>
+                `;
+            };
+            reader.readAsDataURL(file);
+            
+            const formData = new FormData();
+            formData.append('file', file);
+            
+            loadingDiv.style.display = 'block';
+            errorDiv.style.display = 'none';
+            statsDiv.style.display = 'none';
+            
+            try {
+                const response = await fetch('/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const data = await response.json();
+                
+                if (data.error) {
+                    showError(data.error);
+                } else {
+                    displayFaces(data.faces);
+                }
+            } catch (error) {
+                showError('Ошибка при загрузке файла');
+            } finally {
+                loadingDiv.style.display = 'none';
+            }
+        });
+        
+        function showError(message) {
+            errorDiv.textContent = message;
+            errorDiv.style.display = 'block';
+            statsDiv.style.display = 'none';
+        }
+        
+        function displayFaces(faces) {
+            const img = document.getElementById('uploaded-image');
+            if (!img) return;
+            
+            const container = document.querySelector('.image-container');
+            const oldBoxes = container.querySelectorAll('.face-box');
+            oldBoxes.forEach(box => box.remove());
+            
+            if (faces.length === 0) {
+                showError('Лица не найдены');
+                return;
+            }
+            
+            statsDiv.style.display = 'block';
+            faceCountSpan.textContent = faces.length;
+            
+            const imgWidth = img.offsetWidth;
+            const imgHeight = img.offsetHeight;
+            const naturalWidth = img.naturalWidth;
+            const naturalHeight = img.naturalHeight;
+            
+            const scaleX = imgWidth / naturalWidth;
+            const scaleY = imgHeight / naturalHeight;
+            
+            faces.forEach(face => {
+                const [x1, y1, x2, y2] = face.box;
+                
+                const scaledX1 = Math.max(0, x1 * scaleX);
+                const scaledY1 = Math.max(0, y1 * scaleY);
+                const scaledX2 = Math.min(imgWidth, x2 * scaleX);
+                const scaledY2 = Math.min(imgHeight, y2 * scaleY);
+                
+                const boxDiv = document.createElement('div');
+                boxDiv.className = 'face-box';
+                boxDiv.style.left = scaledX1 + 'px';
+                boxDiv.style.top = scaledY1 + 'px';
+                boxDiv.style.width = (scaledX2 - scaledX1) + 'px';
+                boxDiv.style.height = (scaledY2 - scaledY1) + 'px';
+                
+                // Убираем встроенный label из boxDiv
+                
+                container.appendChild(boxDiv);
+                
+                // Создаем отдельный тултип при наведении
+                boxDiv.addEventListener('mouseenter', (e) => {
+                    // Удаляем старый тултип если есть
+                    const oldTooltip = document.querySelector('.face-tooltip');
+                    if (oldTooltip) oldTooltip.remove();
+                    
+                    const tooltip = document.createElement('div');
+                    tooltip.className = 'face-tooltip';
+                    const confidence = Math.round(face.confidence * 100);
+                    tooltip.textContent = `${face.name} • ${confidence}%`;
+                    
+                    // Получаем координаты рамки относительно страницы
+                    const rect = boxDiv.getBoundingClientRect();
+                    const containerRect = container.getBoundingClientRect();
+                    
+                    // Позиционируем тултип над рамкой, но в пределах видимой области
+                    let tooltipX = rect.left;
+                    let tooltipY = rect.top - 50; // 50px над рамкой
+                    
+                    // Проверяем, не выходит ли тултип за левый край
+                    if (tooltipX < 10) tooltipX = 10;
+                    
+                    // Проверяем, не выходит ли за правый край
+                    if (tooltipX + 200 > window.innerWidth) {
+                        tooltipX = window.innerWidth - 210;
+                    }
+                    
+                    // Если тултип уходит за верхний край, показываем его под рамкой
+                    if (tooltipY < 10) {
+                        tooltipY = rect.bottom + 10;
+                    }
+                    
+                    tooltip.style.left = tooltipX + 'px';
+                    tooltip.style.top = tooltipY + 'px';
+                    
+                    document.body.appendChild(tooltip);
+                });
+                
+                boxDiv.addEventListener('mouseleave', () => {
+                    const tooltip = document.querySelector('.face-tooltip');
+                    if (tooltip) tooltip.remove();
+                });
+            });
+        }
+    </script>
+</body>
+</html>
