@@ -1,7 +1,7 @@
 # Основные фреймворки
 flask==2.3.3
-torch==2.0.1+cpu
-torchvision==0.15.2
+torch --index-url https://download.pytorch.org/whl/cpu
+torchvision --index-url https://download.pytorch.org/whl/cpu
 
 # Работа с изображениями
 Pillow==10.0.1
